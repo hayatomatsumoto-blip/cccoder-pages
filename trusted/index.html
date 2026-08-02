@@ -25,7 +25,16 @@
   <script>
     // 一般用と同じ匿名デプロイ。trustedKey でパスコード省略。Google直リンクは使わない（バナー回避）。
     var GAS_BASE_URL = 'https://script.google.com/macros/s/AKfycbwZGNZEb05lpLeYHhmTB9B386I9rMFhB8ihCs0j1C4E4sBxhtTn179IWyyRwJXJqctP/exec';
-    var TRUSTED_ENTRY_KEY = '1mA1sKpNUSN7rj-6t3IkRe16w881YzKB';
+
+    // 2026-08-03: 鍵をこのファイルに書かない。
+    // このリポジトリは GitHub Pages のため公開されており、ここに書いた値は誰でも読める。
+    // 鍵は各自のブックマーク（…/trusted/#k=xxxx）に持たせる。
+    // 「#」以降はサーバーへ送信されないため、アクセスログやリファラに鍵が残らない。
+    function getTrustedEntryKeyFromHash() {
+      var m = (location.hash || '').match(/(?:^#|[#&])k=([^&]+)/);
+      try { return m ? decodeURIComponent(m[1]) : ''; } catch (e) { return ''; }
+    }
+    var TRUSTED_ENTRY_KEY = getTrustedEntryKeyFromHash();
     var TOKEN_STORAGE_KEY = 'cccoder_auth_token_trusted';
     var frame = document.getElementById('app-frame');
 
@@ -37,7 +46,11 @@
     }
     function buildFrameUrl() {
       var params = [];
-      params.push('trustedKey=' + encodeURIComponent(TRUSTED_ENTRY_KEY));
+      // 鍵が無い（#k= の無いURLで開かれた）ときは付けない。
+      // その場合はGAS側でパスコード画面になる＝入れないだけで、業務は一般入口から継続できる。
+      if (TRUSTED_ENTRY_KEY) {
+        params.push('trustedKey=' + encodeURIComponent(TRUSTED_ENTRY_KEY));
+      }
       var token = getStoredToken();
       if (token) params.push('authToken=' + encodeURIComponent(token));
       return GAS_BASE_URL + '?' + params.join('&');
